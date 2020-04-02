@@ -1,14 +1,12 @@
-def target_cluster_flags = ""
-
 pipeline {
 	agent {
         label 'ocp'
     }
 
 	parameters {
-		string(name: 'GIT_REPO', description: 'REpository GIT', defaultValue: "https://github.com/mauiroma/geo.git")
+		string(name: 'GIT_REPO', description: 'REpository GIT', defaultValue: "https://github.com/mauiroma/quarkus-play.git")
 		string(name: 'GIT_BRANCH', description: 'GIT Branch', defaultValue: "master")
-		string(name: 'IMAGE_TAG_NAME', description: 'Image tag', defaultValue: "quarkus-app")
+		string(name: 'IMAGE_TAG_NAME', description: 'Image tag', defaultValue: "quarkus-app-1")
 		booleanParam(name: 'doPush', defaultValue: false, description: 'Indica se effettuare la push sul registry')
 	}
 	stages {
