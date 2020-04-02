@@ -1,169 +1,139 @@
 <?xml version='1.1' encoding='UTF-8'?>
 <flow-definition plugin="workflow-job@2.29">
-    <actions>
-        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@1.3.7"/>
-        <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@1.3.7">
-            <jobProperties/>
-            <triggers/>
-            <parameters>
-                <string>GIT_BRANCH</string>
-                <string>OCP_CLUSTER_URL</string>
-                <string>GIT_REPO</string>
-                <string>doRollout</string>
-                <string>OCP_PROJECT</string>
-                <string>OCP_SERVICE_TOKEN</string>
-            </parameters>
-            <options/>
-        </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
-    </actions>
-    <description></description>
-    <keepDependencies>false</keepDependencies>
-    <properties>
-        <hudson.model.ParametersDefinitionProperty>
-            <parameterDefinitions>
-                <hudson.model.StringParameterDefinition>
-                    <name>GIT_REPO</name>
-                    <description>REpository GIT</description>
-                    <defaultValue>https://github.com/mauiroma/geo.git</defaultValue>
-                    <trim>false</trim>
-                </hudson.model.StringParameterDefinition>
-                <hudson.model.StringParameterDefinition>
-                    <name>GIT_BRANCH</name>
-                    <description>GIT Branch</description>
-                    <defaultValue>dev</defaultValue>
-                    <trim>false</trim>
-                </hudson.model.StringParameterDefinition>
-                <hudson.model.StringParameterDefinition>
-                    <name>OCP_PROJECT</name>
-                    <description>Namesapce</description>
-                    <defaultValue>demo-app1</defaultValue>
-                    <trim>false</trim>
-                </hudson.model.StringParameterDefinition>
-                <hudson.model.StringParameterDefinition>
-                    <name>OCP_CLUSTER_URL</name>
-                    <description>OCP Cluster URL</description>
-                    <defaultValue>https://master.rhpds3x.openshift.opentlc.com</defaultValue>
-                    <trim>false</trim>
-                </hudson.model.StringParameterDefinition>
-                <hudson.model.StringParameterDefinition>
-                    <name>OCP_SERVICE_TOKEN</name>
-                    <description>OCP Secret</description>
-                    <defaultValue>OCP_SERVICE_TOKEN</defaultValue>
-                    <trim>false</trim>
-                </hudson.model.StringParameterDefinition>
-                <hudson.model.BooleanParameterDefinition>
-                    <name>doRollout</name>
-                    <description>Indica se effettuare anche il deployment dell&apos;applicazione</description>
-                    <defaultValue>true</defaultValue>
-                </hudson.model.BooleanParameterDefinition>
-            </parameterDefinitions>
-        </hudson.model.ParametersDefinitionProperty>
-        <io.fabric8.jenkins.openshiftsync.BuildConfigProjectProperty plugin="openshift-sync@1.0.44">
-            <uid></uid>
-            <namespace></namespace>
-            <name></name>
-            <resourceVersion></resourceVersion>
-        </io.fabric8.jenkins.openshiftsync.BuildConfigProjectProperty>
-        <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.13">
-            <gitLabConnection></gitLabConnection>
-        </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
-    </properties>
-    <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.73">
-        <script>def target_cluster_flags = &quot;&quot;
-            pipeline {
-                agent any
+  <actions>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobAction plugin="pipeline-model-definition@1.3.7"/>
+    <org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction plugin="pipeline-model-definition@1.3.7">
+      <jobProperties/>
+      <triggers/>
+      <parameters>
+        <string>doPush</string>
+        <string>GIT_BRANCH</string>
+        <string>IMAGE_TAG_NAME</string>
+        <string>GIT_REPO</string>
+      </parameters>
+      <options/>
+    </org.jenkinsci.plugins.pipeline.modeldefinition.actions.DeclarativeJobPropertyTrackerAction>
+  </actions>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <hudson.model.ParametersDefinitionProperty>
+      <parameterDefinitions>
+        <hudson.model.StringParameterDefinition>
+          <name>GIT_REPO</name>
+          <description>REpository GIT</description>
+          <defaultValue>https://github.com/mauiroma/quarkus-play.git</defaultValue>
+          <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>GIT_BRANCH</name>
+          <description>GIT Branch</description>
+          <defaultValue>master</defaultValue>
+          <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.StringParameterDefinition>
+          <name>IMAGE_TAG_NAME</name>
+          <description>Image tag</description>
+          <defaultValue>quarkus-app</defaultValue>
+          <trim>false</trim>
+        </hudson.model.StringParameterDefinition>
+        <hudson.model.BooleanParameterDefinition>
+          <name>doPush</name>
+          <description>Indica se effettuare la push sul registry</description>
+          <defaultValue>false</defaultValue>
+        </hudson.model.BooleanParameterDefinition>
+      </parameterDefinitions>
+    </hudson.model.ParametersDefinitionProperty>
+    <io.fabric8.jenkins.openshiftsync.BuildConfigProjectProperty plugin="openshift-sync@1.0.44">
+      <uid></uid>
+      <namespace></namespace>
+      <name></name>
+      <resourceVersion></resourceVersion>
+    </io.fabric8.jenkins.openshiftsync.BuildConfigProjectProperty>
+    <com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty plugin="gitlab-plugin@1.5.13">
+      <gitLabConnection></gitLabConnection>
+    </com.dabsquared.gitlabjenkins.connection.GitLabConnectionProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.73">
+    <script>pipeline {
+	agent {
+        label &apos;ocp&apos;
+    }
 
-                parameters {
-                    string(name: &apos;GIT_REPO&apos;, description: &apos;REpository GIT&apos;, defaultValue: &quot;https://github.com/mauiroma/geo.git&quot;)
-                    string(name: &apos;GIT_BRANCH&apos;, description: &apos;GIT Branch&apos;, defaultValue: &quot;master&quot;)
-                    string(name: &apos;IMAGE_TAG_NAME&apos;, description: &apos;Image Name&apos;, defaultValue: &apos;quarkus-demo&apos;)
-                }
-                stages {
-                    stage(&apos;prepare&apos;) {
-                        steps {
-                            script {
-                                target_cluster_flags = &quot;--server=${OCP_CLUSTER_URL} --insecure-skip-tls-verify --namespace=${OCP_PROJECT}&quot;
-                            }
-                        }
-                    }
-                    stage(&apos;CleanWS&apos;) {
-                        steps{
-                            script {
-                                deleteDir()
-                            }
-                        }
-                    }
-                    stage(&apos;Source checkout&apos;) {
-                        steps {
-                            checkout(
-                                [$class                           : &apos;GitSCM&apos;, branches: [[name: &quot;${GIT_BRANCH}&quot;]],
-                                doGenerateSubmoduleConfigurations: false,
-                                extensions                       : [],
-                                submoduleCfg                     : [],
-                                userRemoteConfigs                : [[url: &quot;${GIT_REPO}&quot;]]]
-                            )
-                        }
-                    }
-                    stage(&apos;Test&apos;) {
-                        steps {
-                            script{
-                                sh(
-                                    script: &quot;mvn test&quot;,
-                                    returnStdout: true
-                                )
-                            }
-                        }
-                    }
-                    stage(&apos;Package&apos;) {
-                        steps {
-                            script{
-                                sh(
-                                    script: &quot;mvn  quarkus:build&quot;,
-                                    returnStdout: true
-                                )
-                            }
-                        }
-                    }
-                    stage(&apos;Prepare&apos;) {
-                        steps {
-                            script{
-                                sh(
-                                    script: &quot;cp -r ${WORKSPACE}/target ${WORKSPACE}/docker &quot;,
-                                    returnStdout: true
-                                )
-                            }
-                        }
-                    }
-                    stage(&apos;Docker Build&apos;) {
-                        steps {
-                            script{
-                                sh(
-                                    script: &quot;cp -r ${WORKSPACE}/target ${WORKSPACE}/docker &quot;,
-                                    returnStdout: true
-                                )
-                            }
-                        }
-                    }
-
-                    stage(&apos;Rollout&apos;) {
-                    when {
-                    expression { doRollout ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/ }
-                    }
-                    steps {
-                    script{
-                    withCredentials([string(credentialsId: &quot;${OCP_SERVICE_TOKEN}&quot;, variable: &apos;OCP_SERVICE_TOKEN&apos;)]) {
+	parameters {
+		string(name: &apos;GIT_REPO&apos;, description: &apos;REpository GIT&apos;, defaultValue: &quot;https://github.com/mauiroma/quarkus-play.git&quot;)
+		string(name: &apos;GIT_BRANCH&apos;, description: &apos;GIT Branch&apos;, defaultValue: &quot;master&quot;)
+		string(name: &apos;IMAGE_TAG_NAME&apos;, description: &apos;Image tag&apos;, defaultValue: &quot;quarkus-app&quot;)
+		booleanParam(name: &apos;doPush&apos;, defaultValue: false, description: &apos;Indica se effettuare la push sul registry&apos;)
+	}
+	stages {
+		stage(&apos;Source checkout&apos;) {
+			steps {
+				checkout(
+					[$class                           : &apos;GitSCM&apos;, branches: [[name: &quot;${GIT_BRANCH}&quot;]],
+					doGenerateSubmoduleConfigurations: false,
+					extensions                       : [],
+					submoduleCfg                     : [],
+					userRemoteConfigs                : [[url: &quot;${GIT_REPO}&quot;]]]
+					)
+			}
+		}
+ 		stage(&apos;Test&apos;) {
+			steps {
+	            script{
                     sh(
-                    script: &quot;oc start-build frontend -n ${OCP_PROJECT} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags &amp;&amp; \
-                    oc start-build backend -n ${OCP_PROJECT} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags &quot;
+                        script: &quot;mvn test&quot;,
+                        returnStdout: true
                     )
-                    }
-                    }
-                    }
-                    }
-                }
-            }</script>
-        <sandbox>true</sandbox>
-    </definition>
-    <triggers/>
-    <disabled>false</disabled>
+	            }
+	        }
+	    }
+ 		stage(&apos;Package&apos;) {
+			steps {
+	            script{
+                    sh(
+                        script: &quot; mvn package -DskipTests&quot;,
+                        returnStdout: true
+                    )
+	            }
+	        }
+	    }
+ 		stage(&apos;Prepare&apos;) {
+			steps {
+	            script{
+                    sh(
+                        script: &quot;cp -r ${WORKSPACE}/target ${WORKSPACE}/docker&quot;,
+                        returnStdout: true
+                    )
+	            }
+	        }
+	    }
+ 		stage(&apos;Build&apos;) {
+			steps {
+                sh &quot;&quot;&quot;
+                    cd ${WORKSPACE}/docker
+                    docker build -t ${IMAGE_TAG_NAME}  .
+	            &quot;&quot;&quot;
+	        }
+	    }
+ 		stage(&apos;Push&apos;) {
+ 			when {
+                expression { doPush ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/ }
+            }
+			steps {
+	            script{
+					withCredentials([string(credentialsId: &apos;REGISTRY_USR&apos;, variable: &apos;OCP_SERVICE_TOKEN&apos;)]) {
+	                    sh(
+	                        script: &quot;docker push ${IMAGE_TAG_NAME}&quot;
+	                    )
+	                }
+	            }
+	        }
+	    }
+	}
+}</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
 </flow-definition>
