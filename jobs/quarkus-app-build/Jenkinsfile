@@ -1,0 +1,77 @@
+def target_cluster_flags = ""
+
+pipeline {
+	agent any
+
+	parameters {
+		string(name: 'GIT_REPO', description: 'REpository GIT', defaultValue: "https://github.com/mauiroma/geo.git")
+		string(name: 'GIT_BRANCH', description: 'GIT Branch', defaultValue: "master")
+		string(name: 'IMAGE_TAG_NAME', description: 'Image tag', defaultValue: "quarkus-app")
+		booleanParam(name: 'doPush', defaultValue: false, description: 'Indica se effettuare la push sul registry')
+	}
+	stages {
+		stage('Source checkout') {
+			steps {
+				checkout(
+					[$class                           : 'GitSCM', branches: [[name: "${GIT_BRANCH}"]],
+					doGenerateSubmoduleConfigurations: false,
+					extensions                       : [],
+					submoduleCfg                     : [],
+					userRemoteConfigs                : [[url: "${GIT_REPO}"]]]
+					)
+			}
+		}
+ 		stage('Test') {
+			steps {
+	            script{
+                    sh(
+                        script: "mvn test",
+                        returnStdout: true
+                    )
+	            }
+	        }
+	    }
+ 		stage('Package') {
+			steps {
+	            script{
+                    sh(
+                        script: "mvn quarkus:build",
+                        returnStdout: true
+                    )
+	            }
+	        }
+	    }
+ 		stage('Prepare') {
+			steps {
+	            script{
+                    sh(
+                        script: "cp -r ${WORKSPACE}/target ${WORKSPACE}/docker",
+                        returnStdout: true
+                    )
+	            }
+	        }
+	    }
+ 		stage('Build') {
+			steps {
+                sh """
+                    cd ${WORKSPACE}/docker
+                    docker build -t ${IMAGE_TAG_NAME}  .
+	            """
+	        }
+	    }
+ 		stage('Push') {
+ 			when {
+                expression { doPush ==~ /(?i)(Y|YES|T|TRUE|ON|RUN)/ }
+            }
+			steps {
+	            script{
+					withCredentials([string(credentialsId: 'REGISTRY_USR', variable: 'OCP_SERVICE_TOKEN')]) {
+	                    sh(
+	                        script: "docker push ${IMAGE_TAG_NAME}"
+	                    )
+	                }
+	            }
+	        }
+	    }
+	}
+}
