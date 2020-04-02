@@ -1,7 +1,9 @@
 def target_cluster_flags = ""
 
 pipeline {
-	agent any
+	agent {
+        label 'ocp'
+    }
 
 	parameters {
 		string(name: 'GIT_REPO', description: 'REpository GIT', defaultValue: "https://github.com/mauiroma/geo.git")
