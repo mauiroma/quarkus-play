@@ -64,7 +64,8 @@
 		string(name: &apos;GIT_REPO&apos;, description: &apos;REpository GIT&apos;, defaultValue: &quot;https://github.com/mauiroma/quarkus-play.git&quot;)
 		string(name: &apos;GIT_BRANCH&apos;, description: &apos;GIT Branch&apos;, defaultValue: &quot;master&quot;)
 		string(name: &apos;IMAGE_TAG_NAME&apos;, description: &apos;Image tag&apos;, defaultValue: &quot;quarkus-app&quot;)
-		booleanParam(name: &apos;doPush&apos;, defaultValue: false, description: &apos;Indica se effettuare la push sul registry&apos;)
+        choice(choices: ['podman' , 'docker'], description: 'Selezionare se effettuare la build con podman o docker', name: 'BUILD_TOOL')
+        booleanParam(name: &apos;doPush&apos;, defaultValue: false, description: &apos;Indica se effettuare la push sul registry&apos;)
 	}
 	stages {
 		stage(&apos;Source checkout&apos;) {
@@ -108,11 +109,25 @@
 	            }
 	        }
 	    }
- 		stage(&apos;Build&apos;) {
+ 		stage(&apos;Build Docker&apos;) {
+ 			when {
+                expression { params.BUILD_TOOL == 'docker' }
+            }
 			steps {
                 sh &quot;&quot;&quot;
                     cd ${WORKSPACE}/docker
                     docker build -t ${IMAGE_TAG_NAME}  .
+	            &quot;&quot;&quot;
+	        }
+	    }
+ 		stage(&apos;Build Podman&apos;) {
+ 			when {
+                expression { params.BUILD_TOOL == 'podman' }
+            }
+			steps {
+                sh &quot;&quot;&quot;
+                    cd ${WORKSPACE}/docker
+                    podman build -t ${IMAGE_TAG_NAME}  .
 	            &quot;&quot;&quot;
 	        }
 	    }
