@@ -119,12 +119,12 @@ pipeline {
             )
             if (checkDCExists == 1) {
               sh(
-                script: "oc new-app -l app=${PROJECT_NAME} --image-stream=${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
+                script: "oc new-app --as-deployment-config -l app=${PROJECT_NAME} --image-stream=${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
                 returnStdout:true
               )
             }else{
               sh"""
-                oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
+                oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags --wait
               """
             }
           }
