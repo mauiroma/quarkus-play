@@ -49,7 +49,7 @@ pipeline {
       steps {
         script{
           sh(
-            script: "${MVN_HOME}/mvn package -DskipTests",
+            script: "${MVN_HOME}/mvn clean package -DskipTests",
             returnStdout: true
             )
         }
@@ -90,15 +90,14 @@ pipeline {
       steps {
         script {
           withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
-            def currentBCVersion =
+            def tagExist =
             sh(
-              script: "oc get bc ${PROJECT_NAME} -o jsonpath='{.spec.output.to.name}' --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags",
-              returnStdout: true
+              script: "oc get is ${PROJECT_NAME} -o jsonpath='{.status.tags}' --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags |grep tag:${PROJECT_TAG}",
+              returnStatus: true
             )
-            echo "Current Version  $currentBCVersion"
-            if (!currentBCVersion.equalsIgnoreCase("${PROJECT_NAME}:${PROJECT_TAG}")) {
+            if (tagExist == 1) {
               sh """
-                oc patch bc ${PROJECT_NAME} --type=json -p='[{"op": "replace", "path": "/spec/output/to/name", "value":${PROJECT_NAME}:${PROJECT_TAG}}]' --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags
+                oc patch bc ${PROJECT_NAME} --type=json -p='[{"op": "replace", "path": "/spec/output/to/name", "value":"${PROJECT_NAME}:${PROJECT_TAG}"}]' --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags
                 oc start-build ${PROJECT_NAME} --from-dir=${WORKSPACE}/target/ocp --follow --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
               """
             }else{
@@ -124,10 +123,9 @@ pipeline {
                 returnStdout:true
               )
             }else{
-              sh(
-                script: "oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
-                returnStdout: true
-              )
+              sh"""
+                oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
+              """
             }
           }
         }
