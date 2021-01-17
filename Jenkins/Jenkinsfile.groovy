@@ -1,7 +1,8 @@
 def target_cluster_flags = ""
 def docker_registry = "image-registry.openshift-image-registry.svc:5000"
 
-
+//oc delete all -l app=quarkus-app
+//oc delete all -l build=quarkus-app
 pipeline {
   agent any
   environment { 
@@ -58,12 +59,12 @@ pipeline {
     stage('Prepare') {
       steps {
         script{
-          sh """
+          sh '''
             rm -rf ${WORKSPACE}/target/ocp
             mkdir ${WORKSPACE}/target/ocp   
             cp -R ${WORKSPACE}/target/lib ${WORKSPACE}/target/ocp
             cp -R ${WORKSPACE}/target/*-runner.jar ${WORKSPACE}/target/ocp
-          """
+          '''
         }
       }
     }
@@ -71,16 +72,13 @@ pipeline {
       steps{
         script{
           withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
-            def checkBCExists =
+            def isBCExists =
             sh(
-              script: "oc get bc/${PROJECT_NAME} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
+              script: "oc get bc/${PROJECT_NAME}  --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
               returnStatus:true
-            )
-            if (checkBCExists == 1) {
-              sh(
-                script: "oc new-build --name=${PROJECT_NAME} --binary=true -i=java:openjdk-11-ubi8 --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
-                returnStdout:true
-              )
+            )         
+            if (isBCExists == 1) {
+              sh("oc new-build --name=${PROJECT_NAME} --binary=true -i=java:openjdk-11-ubi8 --token=${OCP_SERVICE_TOKEN} $target_cluster_flags")
             }
           }
         }
@@ -90,65 +88,78 @@ pipeline {
       steps {
         script {
           withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
-            def tagExist =
+            def isTagExist =
             sh(
-              script: "oc get is ${PROJECT_NAME} -o jsonpath='{.status.tags}' --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags |grep tag:${PROJECT_TAG}",
-              returnStatus: true
+              //script: "oc get is ${PROJECT_NAME} -o yaml --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags |grep \"tag: \"${PROJECT_TAG}\"\"",
+              //returnStatus: true
+              script: "oc get is ${PROJECT_NAME} -o yaml --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags",
+              returnStdout: true
             )
-            if (tagExist == 1) {
+            if (!isTagExist.contains("tag: \"${PROJECT_TAG}\"")) {
+//            if (isTagExist == 1) {
               sh """
                 oc patch bc ${PROJECT_NAME} --type=json -p='[{"op": "replace", "path": "/spec/output/to/name", "value":"${PROJECT_NAME}:${PROJECT_TAG}"}]' --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags
                 oc start-build ${PROJECT_NAME} --from-dir=${WORKSPACE}/target/ocp --follow --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
-              """
+              """  
             }else{
               echo "Image Tag is the same, nothing to do"
             }
           }
         }
-
       }
     }    
     stage('Deploy') {
       steps{
         script{          
           withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
-            def checkDCExists =
-            sh(
+            def isDCExists =
+            sh( 
               script: "oc get dc/${PROJECT_NAME} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
               returnStatus:true
             )
-            if (checkDCExists == 1) {
-              sh(
-                script: "oc new-app --as-deployment-config -l app=${PROJECT_NAME} --image-stream=${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
-                returnStdout:true
-              )
-            }else{
+            if (isDCExists == 1) {
               sh"""
-                oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags --wait
+                oc new-app ${PROJECT_NAME} --as-deployment-config -l app=${PROJECT_NAME} --allow-missing-images --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
+                oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
               """
+            }else{
+              sh("oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags")
             }
           }
         }
       }      
     }
-    stage('Expose') {
+    stage('Create Service') {
       steps{
         script{
           withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
-            def checkRouteExists =
+            def isServiceExists =
+            sh(
+              script: "oc get svc/${PROJECT_NAME} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
+              returnStatus:true
+            )
+            if (isServiceExists == 1) {
+              sh("oc create service clusterip ${PROJECT_NAME} --tcp=8080:8080 --token=${OCP_SERVICE_TOKEN} $target_cluster_flags")
+            }
+          }
+        }
+      }      
+    }
+    stage('Create Route') {
+      steps{
+        script{
+          withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
+            def isRouteExists =
             sh(
               script: "oc get route/${PROJECT_NAME} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
               returnStatus:true
             )
-            if (checkRouteExists == 1) {
-              sh(
-                script: "oc expose svc/${PROJECT_NAME} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
-                returnStdout:true
-              )
+            if (isRouteExists == 1) {
+              sh("oc expose svc/${PROJECT_NAME} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags")
             }
           }
         }
       }      
-    }
+    }    
   }    
 }
