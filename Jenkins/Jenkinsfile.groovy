@@ -1,7 +1,7 @@
 def target_cluster_flags = ""
 def docker_registry = "image-registry.openshift-image-registry.svc:5000"
-def skipApplicationStages=true
-def skipOcpStages=false
+def runApplicationStages=true
+def runOcpStages=true
 //oc delete all -l app=quarkus-app
 //oc delete all -l build=quarkus-app
 pipeline {
@@ -31,27 +31,27 @@ pipeline {
                 )
             if (currentDeployedImage.equalsIgnoreCase("$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG}")) {
                 currentBuild.result = 'ABORTED'
-                echo "DeploymentConfit ${PROJECT_NAME} whit image tag ${PROJECT_TAG} already active, skip ocp's stages"
-                skipOcpStages = true
-            }            
-            def imageStream =
-            sh(
-              script: "oc get is ${PROJECT_NAME} -o yaml --ignore-not-found=true --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags",
-              returnStdout: true
-            )
-            //if(imageStream.size()>0){
+                echo "DeploymentConfit ${PROJECT_NAME} whit image tag ${PROJECT_TAG} already active, skip application and OCP stages"
+                runApplicationStages = false
+                runOcpStages = false
+            }else{
+              def imageStream =
+              sh(
+                script: "oc get is ${PROJECT_NAME} -o yaml --ignore-not-found=true --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags",
+                returnStdout: true
+              )
               if (imageStream.size()>0 && imageStream.contains("tag: \"${PROJECT_TAG}\"")) {            
                 echo "ImageStream ${PROJECT_NAME} with Tag ${PROJECT_TAG} already present, skip application's stages"
-                skipApplicationStages = false
+                runApplicationStages = false
               }
-            //}
+            }
           }           
         }
       }
     }  
     stage('Application'){
       when{
-        expression {skipApplicationStages == true}
+        expression {runApplicationStages == true}
       }      
       stages{
         stage('Source checkout') {
@@ -105,7 +105,7 @@ pipeline {
     }
     stage('OCP'){
       when{
-        expression {skipOcpStages == false}
+        expression {runOcpStages == true}
       }         
       stages{
         stage('Create Build') {
