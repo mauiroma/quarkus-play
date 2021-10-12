@@ -1,6 +1,6 @@
   def target_cluster_flags = ""
   def docker_registry = "image-registry.openshift-image-registry.svc:5000"
-  def runApplicationStages=true
+  def runTagStages=true
   def runOcpStages=true
   //oc delete all -l app=quarkus-app
   //oc delete all -l build=quarkus-app
@@ -8,14 +8,13 @@
     agent any
     environment { 
       OCP_API_SERVER='https://api.lab01.gpslab.club:6443'
-      MVN_HOME='/usr/local/bin'
     }  
     parameters {
       string(name: 'PROJECT_NAME', description: 'Application Name', defaultValue: "quarkus-app")
       string(name: 'PROJECT_TAG', description: 'Application Tag', defaultValue: "1.0")
-      string(name: 'OCP_NAMESPACE', description: 'OCP Project Name', defaultValue: "esselunga-uat")
-      string(name: 'OCP_NAMESPACE_SOURCE', description: 'OCP Project Name', defaultValue: "esselunga")
-      string(name: 'OCP_CREDENTIAL', description: 'ID OCP salvate in Jenkins', defaultValue: "gpslab-lab01")
+      string(name: 'OCP_NAMESPACE', description: 'OCP Project Target Name', defaultValue: "")
+      string(name: 'OCP_NAMESPACE_SOURCE', description: 'OCP Project Source Name', defaultValue: "")
+      string(name: 'OCP_CREDENTIAL', description: 'ID OCP salvate in Jenkins', defaultValue: "")
     }  
     stages {
       stage('Init') {
@@ -25,13 +24,12 @@
             withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
               def currentDeployedImage =
                   sh(
-                      script: "oc get dc ${PROJECT_NAME} -o jsonpath='{.spec.template.spec.containers[0].image}' --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
+                      script: "oc get dc ${PROJECT_NAME} -o jsonpath='{.spec.template.spec.containers[0].image}' --ignore-not-found=true --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
                       returnStdout: true
                   )
-              if (currentDeployedImage.equalsIgnoreCase("$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG}")) {
+              if (currentDeployedImage.size()>0 && currentDeployedImage.equalsIgnoreCase("$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG}")) {
                   currentBuild.result = 'ABORTED'
                   echo "DeploymentConfit ${PROJECT_NAME} whit image tag ${PROJECT_TAG} already active, skip application and OCP stages"
-                  runApplicationStages = false
                   runOcpStages = false
               }else{
                 def imageStream =
@@ -41,7 +39,7 @@
                 )
                 if (imageStream.size()>0 && imageStream.contains("tag: \"${PROJECT_TAG}\"")) {            
                   echo "ImageStream ${PROJECT_NAME} with Tag ${PROJECT_TAG} already present, skip application's stages"
-                  runApplicationStages = false
+                  runTagStages = false
                 }
               }
             }           
@@ -54,6 +52,9 @@
         }         
         stages{
           stage('Tag Image') {
+            when{
+              expression {runTagStages == true}
+            }   
             steps{
               script{
                 withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {

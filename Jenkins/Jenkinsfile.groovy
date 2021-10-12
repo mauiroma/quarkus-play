@@ -14,8 +14,8 @@ pipeline {
     string(name: 'GIT_URL', description: 'Repository BitBucket', defaultValue: "https://github.com/mauiroma/quarkus-play.git")
     string(name: 'PROJECT_NAME', description: 'Application Name', defaultValue: "quarkus-app")
     string(name: 'PROJECT_TAG', description: 'Application Tag', defaultValue: "1.0")
-    string(name: 'OCP_NAMESPACE', description: 'OCP Project Name', defaultValue: "esselunga")
-    string(name: 'OCP_CREDENTIAL', description: 'ID OCP salvate in Jenkins', defaultValue: "gpslab-lab01")
+    string(name: 'OCP_NAMESPACE', description: 'OCP Project Name', defaultValue: "")
+    string(name: 'OCP_CREDENTIAL', description: 'ID OCP salvate in Jenkins', defaultValue: "")
     booleanParam(name: 'test', defaultValue: false, description: 'Selezionare per effettuare i maven test')
   }  
   stages {
@@ -26,10 +26,10 @@ pipeline {
           withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
             def currentDeployedImage =
                 sh(
-                    script: "oc get dc ${PROJECT_NAME} -o jsonpath='{.spec.template.spec.containers[0].image}' --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
+                    script: "oc get dc ${PROJECT_NAME} -o jsonpath='{.spec.template.spec.containers[0].image}'  --ignore-not-found=true  --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
                     returnStdout: true
                 )
-            if (currentDeployedImage.equalsIgnoreCase("$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG}")) {
+            if (currentDeployedImage.size()>0 && currentDeployedImage.equalsIgnoreCase("$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG}")) {
                 currentBuild.result = 'ABORTED'
                 echo "DeploymentConfit ${PROJECT_NAME} whit image tag ${PROJECT_TAG} already active, skip application and OCP stages"
                 runApplicationStages = false
@@ -73,7 +73,7 @@ pipeline {
           steps{
             script{
               sh(
-                script: "${MVN_HOME}/mvn clean test",
+                script: "${MVN_HOME}/mvn test",
                 returnStdout: true
                 )
             }
@@ -83,7 +83,8 @@ pipeline {
           steps {
             script{
               sh(
-                script: "${MVN_HOME}/mvn package -DskipTests",
+                //script: "${MVN_HOME}/mvn package -Dquarkus.kubernetes.deploy=false -DskipTests",
+                script: "./mvnw clean package -Dquarkus.package.type=uber-jar",
                 returnStdout: true
                 )
             }
@@ -92,12 +93,13 @@ pipeline {
         stage('Prepare') {
           steps {
             script{
-              sh '''
-                rm -rf ${WORKSPACE}/target/ocp
-                mkdir ${WORKSPACE}/target/ocp   
-                cp -R ${WORKSPACE}/target/lib ${WORKSPACE}/target/ocp
-                cp -R ${WORKSPACE}/target/*-runner.jar ${WORKSPACE}/target/ocp
-              '''
+              //cp -R ${WORKSPACE}/target/lib ${WORKSPACE}/ocp
+              sh """
+                rm -rf ${WORKSPACE}/ocp
+                mkdir ${WORKSPACE}/ocp              
+                cp -R ${WORKSPACE}/target/*-runner.jar ${WORKSPACE}/ocp
+                ${MVN_HOME}/mvn clean
+              """
             }
           }
         }
@@ -136,7 +138,7 @@ pipeline {
                 if (!isTagExist.contains("tag: \"${PROJECT_TAG}\"")) {
                   sh """
                     oc patch bc ${PROJECT_NAME} --type=json -p='[{"op": "replace", "path": "/spec/output/to/name", "value":"${PROJECT_NAME}:${PROJECT_TAG}"}]' --token=${OCP_SERVICE_TOKEN}  $target_cluster_flags
-                    oc start-build ${PROJECT_NAME} --from-dir=${WORKSPACE}/target/ocp --follow --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
+                    oc start-build ${PROJECT_NAME} --from-dir=${WORKSPACE}/ocp --follow --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
                   """  
                 }else{
                   echo "Image Tag is the same, nothing to do"
