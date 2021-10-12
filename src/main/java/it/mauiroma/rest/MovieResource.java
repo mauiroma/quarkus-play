@@ -33,7 +33,8 @@ public class MovieResource {
     MovieRepository movieRepository;
 
     @POST
-    @Path("/add/post")
+    @Path("/addPost")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response createJava(@FormParam("json") String json) {
         Jsonb jsonb = JsonbBuilder.create();
         Movie movie = jsonb.fromJson(json, Movie.class);
@@ -42,7 +43,8 @@ public class MovieResource {
     }
 
     @POST
-    @Path("/add/postJson")
+    @Path("/addPostJson")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response createJson(@FormParam("title") String title, @FormParam("year") int year) {
         Movie movie = new Movie(title, year);
         producer.sendMovieToKafka(movie);
