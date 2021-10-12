@@ -7,10 +7,10 @@ def runOcpStages=true
 pipeline {
   agent any
   environment { 
-    OCP_API_SERVER=''
     MVN_HOME='/usr/local/bin'
   }  
   parameters {
+    string(name: 'OCP_API_SERVER', description: 'OCP API Server', defaultValue: "https://api.cluster-ef6d.ef6d.sandbox643.opentlc.com:6443")
     string(name: 'GIT_URL', description: 'Repository BitBucket', defaultValue: "https://github.com/mauiroma/quarkus-play.git")
     string(name: 'PROJECT_NAME', description: 'Application Name', defaultValue: "quarkus-app")
     string(name: 'PROJECT_TAG', description: 'Application Tag', defaultValue: "1.0")
@@ -22,8 +22,7 @@ pipeline {
     stage('Init') {
       steps {
         script {
-//          target_cluster_flags = "--server=${OCP_API_SERVER} --namespace=${OCP_NAMESPACE} --insecure-skip-tls-verify"
-          target_cluster_flags = " --namespace=${OCP_NAMESPACE} --insecure-skip-tls-verify"
+          target_cluster_flags = "--server=${OCP_API_SERVER} --namespace=${OCP_NAMESPACE} --insecure-skip-tls-verify"
           withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
             def currentDeployedImage =
                 sh(
