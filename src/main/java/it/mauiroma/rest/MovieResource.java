@@ -1,14 +1,12 @@
 package it.mauiroma.rest;
 import com.github.javafaker.Faker;
 import it.mauiroma.dto.MovieRepository;
-import it.mauiroma.kafka.Movie;
+import it.mauiroma.pojo.Movie;
 import it.mauiroma.kafka.MovieProducer;
-import it.mauiroma.utils.JsonConverter;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
 import org.jboss.logging.Logger;
-import org.jboss.resteasy.annotations.SseElementType;
 
 import javax.inject.Inject;
 import javax.json.bind.Jsonb;
@@ -16,8 +14,6 @@ import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.ArrayList;
-import java.util.List;
 
 @Path("/movie")
 //@Consumes(MediaType.APPLICATION_JSON)

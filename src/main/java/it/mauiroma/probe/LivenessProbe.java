@@ -1,7 +1,7 @@
 package it.mauiroma.probe;
 
 import it.mauiroma.dto.MovieRepository;
-import it.mauiroma.kafka.Movie;
+import it.mauiroma.pojo.Movie;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;

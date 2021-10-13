@@ -1,4 +1,4 @@
-package it.mauiroma.kafka;
+package it.mauiroma.pojo;
 
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;

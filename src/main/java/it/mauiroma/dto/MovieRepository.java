@@ -1,11 +1,10 @@
 package it.mauiroma.dto;
 
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
-import it.mauiroma.kafka.Movie;
+import it.mauiroma.pojo.Movie;
 import org.eclipse.microprofile.opentracing.Traced;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.transaction.Transactional;
 import java.util.List;
 
 @ApplicationScoped
