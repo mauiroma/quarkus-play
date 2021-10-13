@@ -1,6 +1,7 @@
 package it.mauiroma.probe;
 
 import it.mauiroma.dto.MovieRepository;
+import it.mauiroma.kafka.Movie;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;
 import org.eclipse.microprofile.health.Liveness;
@@ -18,14 +19,15 @@ public class LivenessProbe implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
+        Movie movie = movieRepository.load("liveness");
         try {
-            if (movieRepository.loadAll().size() > 0) {
+            if (movie != null) {
                 return HealthCheckResponse.up("Liveness probe ok");
             } else {
                 return HealthCheckResponse.down("Liveness probe ko, Database outline");
             }
         }catch(Exception ex){
-            return HealthCheckResponse.down("Liveness probe ko, Database outline");
+            return HealthCheckResponse.down("Liveness probe ko, Database outline "+ex.getMessage());
         }
     }
 }
