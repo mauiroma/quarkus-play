@@ -3,6 +3,7 @@ import com.github.javafaker.Faker;
 import it.mauiroma.dto.MovieRepository;
 import it.mauiroma.kafka.Movie;
 import it.mauiroma.kafka.MovieProducer;
+import it.mauiroma.utils.JsonConverter;
 import org.eclipse.microprofile.metrics.MetricUnits;
 import org.eclipse.microprofile.metrics.annotation.Counted;
 import org.eclipse.microprofile.metrics.annotation.Timed;
@@ -30,6 +31,9 @@ public class MovieResource {
     MovieProducer producer;
 
     @Inject
+    JsonConverter jsonConverter;
+
+    @Inject
     MovieRepository movieRepository;
 
     @POST
@@ -37,8 +41,7 @@ public class MovieResource {
     @Counted(description = "How many postJson", absolute = true, name = "countPostJson")
     @Timed(name = "timerPostJson", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response createJava(@FormParam("json") String json) {
-        Jsonb jsonb = JsonbBuilder.create();
-        Movie movie = jsonb.fromJson(json, Movie.class);
+        Movie movie = jsonConverter.convertFromString(json);
         producer.sendMovieToKafka(movie);
         return Response.ok(movie).build();
     }

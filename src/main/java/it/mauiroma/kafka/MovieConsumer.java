@@ -32,7 +32,7 @@ public class MovieConsumer {
     public void receive(Record<Integer, String> record) {
         logger.infof("Rececived Message from Kafka: %d - %s", record.key(), record.value());
         try{
-            movieRepository.persist(jsonConverter.convertFromKafka(record));
+            movieRepository.persist(jsonConverter.convertFromString(record.value()));
         }catch(Exception ex){
             ex.printStackTrace();
             logger.infof("Discard Message");
