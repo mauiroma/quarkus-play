@@ -2,6 +2,7 @@ package it.mauiroma.kafka;
 
 import io.smallrye.reactive.messaging.kafka.Record;
 import it.mauiroma.dto.MovieRepository;
+import it.mauiroma.utils.JsonConverter;
 import org.eclipse.microprofile.opentracing.Traced;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
@@ -24,11 +25,14 @@ public class MovieProducer {
     @Inject @Channel("channel-out")
     Emitter<Record<Integer, String>> emitter;
 
+    @Inject
+    JsonConverter jsonConverter;
+
     private final Logger logger = Logger.getLogger(MovieProducer.class);
 
     private AtomicInteger messageCount = new AtomicInteger(0);
     private BlockingQueue<Integer> messages = new LinkedBlockingQueue<Integer>();
-
+/*
     public void sendMovieToKafka(Movie movie) {
         try {
             logger.infof("Sent %s movie to kafka",movie);
@@ -43,6 +47,16 @@ public class MovieProducer {
             e.printStackTrace();
         }
     }
-
+*/
+    public void sendMovieToKafka(String movie) {
+        try {
+            logger.infof("Sent %s movie to kafka",movie);
+            messages.add(messageCount.incrementAndGet());
+            int index = messages.take();
+            emitter.send(Record.of(index, movie));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
 }

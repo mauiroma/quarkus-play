@@ -30,7 +30,7 @@ public class Movie extends PanacheEntityBase {
     public String toString() {
         return "{" +
                 "\"title\":\""+getTitle()+"\"" +
-                ", \"year\":"+getYear() +
+                ",\"year\":"+getYear() +
                 "}";
     }
 

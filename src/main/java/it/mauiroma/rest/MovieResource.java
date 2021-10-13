@@ -30,8 +30,6 @@ public class MovieResource {
     @Inject
     MovieProducer producer;
 
-    @Inject
-    JsonConverter jsonConverter;
 
     @Inject
     MovieRepository movieRepository;
@@ -41,9 +39,8 @@ public class MovieResource {
     @Counted(description = "How many postJson", absolute = true, name = "countPostJson")
     @Timed(name = "timerPostJson", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response createJava(@FormParam("json") String json) {
-        Movie movie = jsonConverter.convertFromString(json);
-        producer.sendMovieToKafka(movie);
-        return Response.ok(movie).build();
+        producer.sendMovieToKafka(json);
+        return Response.ok(json).build();
     }
 
     @POST
@@ -52,7 +49,7 @@ public class MovieResource {
     @Timed(name = "timerPostParams", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response createJson(@FormParam("title") String title, @FormParam("year") int year) {
         Movie movie = new Movie(title, year);
-        producer.sendMovieToKafka(movie);
+        producer.sendMovieToKafka(movie.toString());
         return Response.ok(movie).build();
     }
 
@@ -62,7 +59,7 @@ public class MovieResource {
     @Timed(name = "timerAddMovie", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response add(Movie movie) {
         logger.infof("add new movie %s", movie);
-        producer.sendMovieToKafka(movie);
+        producer.sendMovieToKafka(movie.toString());
         return Response.ok(movie).build();
     }
 
@@ -74,7 +71,7 @@ public class MovieResource {
         Faker faker = new Faker();
         Movie movie = new Movie(faker.artist().name(), 2021);
         logger.infof("add random movie %s", movie);
-        producer.sendMovieToKafka(movie);
+        producer.sendMovieToKafka(movie.toString());
         return Response.ok(movie).build();
     }
 
