@@ -26,14 +26,17 @@ public class MovieConsumer {
     @Blocking
     @Transactional
     public void receive(Record<Integer, String> record) {
-        logger.infof("Got a movie: %d - %s", record.key(), record.value());
+        logger.infof("Rececived Message from Kafka: %d - %s", record.key(), record.value());
         try{
-            Jsonb jsonb = JsonbBuilder.create();
-            Movie movie = jsonb.fromJson(record.value(), Movie.class);
-            movieRepository.persist(movie);
+            movieRepository.persist(convert(record));
         }catch(Exception ex){
             ex.printStackTrace();
             logger.infof("Discard Message");
         }
+    }
+
+    private Movie convert(Record<Integer, String> record){
+        Jsonb jsonb = JsonbBuilder.create();
+        return jsonb.fromJson(record.value(), Movie.class);
     }
 }
