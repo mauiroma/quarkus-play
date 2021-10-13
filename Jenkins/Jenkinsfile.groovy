@@ -119,10 +119,11 @@ pipeline {
                     script: "oc get configmap app-variables --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
                     returnStatus:true
                   )
-                if (isCMExists == 1) {
-                  sh(
-                    script: "oc create configmap app-variables --from-file=configmap/application.properties  --token=${OCP_SERVICE_TOKEN} $target_cluster_flags"
-                  )
+                  if (isCMExists == 1) {
+                    sh(
+                      script: "oc create configmap app-variables --from-file=configmap/application.properties  --token=${OCP_SERVICE_TOKEN} $target_cluster_flags"
+                    )
+                  }
                 }
               }
             }
