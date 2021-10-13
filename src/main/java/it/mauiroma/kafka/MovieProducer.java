@@ -2,6 +2,7 @@ package it.mauiroma.kafka;
 
 import io.smallrye.reactive.messaging.kafka.Record;
 import it.mauiroma.dto.MovieRepository;
+import org.eclipse.microprofile.opentracing.Traced;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
 import org.jboss.logging.Logger;
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 @ApplicationScoped
+@Traced
 public class MovieProducer {
 
     @Inject @Channel("channel-out")

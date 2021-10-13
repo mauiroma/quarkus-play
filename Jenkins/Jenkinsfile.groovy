@@ -16,6 +16,7 @@ pipeline {
     string(name: 'PROJECT_TAG', description: 'Application Tag', defaultValue: "1.0")
     string(name: 'OCP_NAMESPACE', description: 'OCP Project Name', defaultValue: "")
     string(name: 'OCP_CREDENTIAL', description: 'ID OCP salvate in Jenkins', defaultValue: "")
+    string(name: 'JAEGER_SERVICE', description: 'Jaeger(Tracing) service', defaultValue: "jaeger-all-in-one-inmemory-agent")
     booleanParam(name: 'test', defaultValue: false, description: 'Selezionare per effettuare i maven test')
   }  
   stages {
@@ -177,6 +178,7 @@ pipeline {
                 if (isDCExists == 1) {
                   sh"""
                     oc new-app ${PROJECT_NAME} --as-deployment-config -l app=${PROJECT_NAME} --allow-missing-images --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
+                    oc set env dc/${PROJECT_NAME} JAEGER_AGENT_HOST=${JAEGER_SERVICE} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
                     oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
                   """
                 }else{

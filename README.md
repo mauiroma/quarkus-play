@@ -32,6 +32,7 @@ mkdir target/ocp
 cp -R target/lib target/ocp
 cp -R target/*-runner.jar target/ocp
 
+oc policy add-role-to-user view system:serviceaccount:anas:default
 oc new-build --name=quarkus-play --binary=true -i=java:openjdk-11-ubi8
 oc start-build quarkus-play --from-dir=./target/ocp --follow
 oc new-app quarkus-play

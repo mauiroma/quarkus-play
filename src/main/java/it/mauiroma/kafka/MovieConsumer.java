@@ -3,6 +3,7 @@ import io.smallrye.common.annotation.NonBlocking;
 import io.smallrye.reactive.messaging.annotations.Blocking;
 import io.smallrye.reactive.messaging.kafka.Record;
 import it.mauiroma.dto.MovieRepository;
+import org.eclipse.microprofile.opentracing.Traced;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
 import org.jboss.logging.Logger;
 
@@ -12,6 +13,7 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.transaction.Transactional;
 
+@Traced
 @ApplicationScoped
 public class MovieConsumer {
 
