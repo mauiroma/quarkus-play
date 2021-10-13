@@ -6,10 +6,11 @@
   //oc delete all -l build=quarkus-app
   pipeline {
     agent any
-    environment { 
-      OCP_API_SERVER='https://api.lab01.gpslab.club:6443'
-    }  
+    //environment {
+    //  OCP_API_SERVER='https://api.lab01.gpslab.club:6443'
+    //}
     parameters {
+      string(name: 'OCP_API_SERVER', description: 'OCP API Server', defaultValue: "https://api.cluster-ef6d.ef6d.sandbox643.opentlc.com:6443")
       string(name: 'PROJECT_NAME', description: 'Application Name', defaultValue: "quarkus-app")
       string(name: 'PROJECT_TAG', description: 'Application Tag', defaultValue: "1.0")
       string(name: 'OCP_NAMESPACE', description: 'OCP Project Target Name', defaultValue: "")

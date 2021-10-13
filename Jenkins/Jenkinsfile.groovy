@@ -110,7 +110,24 @@ pipeline {
         expression {runOcpStages == true}
       }         
       stages{
-        stage('Create Build') {
+        stage('Create Config Map') {
+          steps{
+            script{
+              withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
+                def isCMExists =
+                  sh(
+                    script: "oc get configmap app-variables --token=${OCP_SERVICE_TOKEN} $target_cluster_flags",
+                    returnStatus:true
+                  )
+                if (isCMExists == 1) {
+                  sh(
+                    script: "oc create configmap app-variables --from-file=configmap/application.properties  --token=${OCP_SERVICE_TOKEN} $target_cluster_flags"
+                  )
+                }
+              }
+            }
+          }
+          stage('Create Build') {
           steps{
             script{
               withCredentials([string(credentialsId: "${OCP_CREDENTIAL}", variable: 'OCP_SERVICE_TOKEN')]) {
