@@ -21,7 +21,7 @@ public class LivenessProbe implements HealthCheck {
     public HealthCheckResponse call() {
         Movie movie = movieRepository.load("liveness");
         try {
-            if (movie != null) {
+            if (movie == null) {
                 return HealthCheckResponse.up("Liveness probe ok");
             } else {
                 return HealthCheckResponse.down("Liveness probe ko, Database outline");
