@@ -32,22 +32,7 @@ public class MovieProducer {
 
     private AtomicInteger messageCount = new AtomicInteger(0);
     private BlockingQueue<Integer> messages = new LinkedBlockingQueue<Integer>();
-/*
-    public void sendMovieToKafka(Movie movie) {
-        try {
-            logger.infof("Sent %s movie to kafka",movie);
-            Jsonb jsonb = JsonbBuilder.create();
-            String movieString = jsonb.toJson(movie);
-            logger.infof("movie %s converted to json",movieString);
-            messages.add(messageCount.incrementAndGet());
-            int index = messages.take();
-            emitter.send(Record.of(index, movieString));
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-*/
     public void sendMovieToKafka(String movie) {
         try {
             logger.infof("Sent %s movie to kafka",movie);
