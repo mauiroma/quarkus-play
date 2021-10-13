@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Path("/movie")
-@Consumes(MediaType.APPLICATION_JSON)
-@Produces(MediaType.APPLICATION_JSON)
+//@Consumes(MediaType.APPLICATION_JSON)
+//@Produces(MediaType.APPLICATION_JSON)
 public class MovieResource {
 
     private final Logger logger = Logger.getLogger(MovieResource.class);
@@ -33,8 +33,8 @@ public class MovieResource {
     MovieRepository movieRepository;
 
     @POST
-    @Path("/addPost")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Path("/add/postJson")
+    //@Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response createJava(@FormParam("json") String json) {
         Jsonb jsonb = JsonbBuilder.create();
         Movie movie = jsonb.fromJson(json, Movie.class);
@@ -43,8 +43,8 @@ public class MovieResource {
     }
 
     @POST
-    @Path("/addPostJson")
-    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Path("/add/postParams")
+    //@Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response createJson(@FormParam("title") String title, @FormParam("year") int year) {
         Movie movie = new Movie(title, year);
         producer.sendMovieToKafka(movie);
