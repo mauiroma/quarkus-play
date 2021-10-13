@@ -179,8 +179,8 @@ pipeline {
                   sh"""
                     oc new-app ${PROJECT_NAME} --as-deployment-config -l app=${PROJECT_NAME} --allow-missing-images --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
                     oc set env dc/${PROJECT_NAME} JAEGER_AGENT_HOST=${JAEGER_SERVICE} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
-                    oc set probe dc/${PROJECT_NAME} --readiness --get-url=http://:8080/q/health/ready
-                    oc set probe dc/${PROJECT_NAME} --liveness --get-url=http://:8080/q/health/live
+                    oc set probe dc/${PROJECT_NAME} --readiness --get-url=http://:8080/q/health/ready --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
+                    oc set probe dc/${PROJECT_NAME} --liveness --get-url=http://:8080/q/health/live --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
                     oc set image dc/${PROJECT_NAME} ${PROJECT_NAME}=$docker_registry/${OCP_NAMESPACE}/${PROJECT_NAME}:${PROJECT_TAG} --token=${OCP_SERVICE_TOKEN} $target_cluster_flags
                   """
                 }else{
