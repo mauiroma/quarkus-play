@@ -34,7 +34,8 @@ public class MovieResource {
 
     @POST
     @Path("/add/postJson")
-    //@Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Counted(description = "How many postJson", absolute = true, name = "countPostJson")
+    @Timed(name = "timerPostJson", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response createJava(@FormParam("json") String json) {
         Jsonb jsonb = JsonbBuilder.create();
         Movie movie = jsonb.fromJson(json, Movie.class);
@@ -44,7 +45,8 @@ public class MovieResource {
 
     @POST
     @Path("/add/postParams")
-    //@Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Counted(description = "How many postParams", absolute = true, name = "countPostParams")
+    @Timed(name = "timerPostParams", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response createJson(@FormParam("title") String title, @FormParam("year") int year) {
         Movie movie = new Movie(title, year);
         producer.sendMovieToKafka(movie);
@@ -75,6 +77,8 @@ public class MovieResource {
 
     @GET
     @Path("/get/{title}")
+    @Counted(description = "How many get Movie", absolute = true, name = "countGetMovie")
+    @Timed(name = "timerGetMovie", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response get(@PathParam("title") String title) {
         logger.infof("read Movie by title %s", title);
         return Response.status(Response.Status.OK).entity(movieRepository.load(title)).build();
@@ -83,6 +87,8 @@ public class MovieResource {
     @GET
     @Path("/list")
     @Produces(MediaType.TEXT_PLAIN)
+    @Counted(description = "How many list Movies", absolute = true, name = "countListMovie")
+    @Timed(name = "timerListMovie", description = "A measure of how long it takes to perform", unit = MetricUnits.MILLISECONDS)
     public Response getAll() {
         logger.infof("read all Movie");
         Jsonb jsonb = JsonbBuilder.create();
